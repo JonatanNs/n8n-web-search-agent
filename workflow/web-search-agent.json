@@ -1,0 +1,136 @@
+{
+  "name": "web-search-agent",
+  "nodes": [
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({\n  error: \"La recherche web a échoué\",\n  details: $json.error?.message ?? \"Erreur inconnue\"\n}) }}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        544,
+        512
+      ],
+      "id": "fe7164fe-86a6-4f15-b2a1-5ecbccdfe8a8",
+      "name": "Respond Error"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "e882881f-19ce-43d9-866c-c0c46670eefa",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        128,
+        416
+      ],
+      "id": "d928a004-8c25-41ea-aeac-faafaaf081be",
+      "name": "Webhook1",
+      "webhookId": "ton-webhook-id",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Op1lCugElg97Auzk",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": {{ JSON.stringify($json.body.query) }},\n  \"search_depth\": \"basic\",\n  \"max_results\": 5,\n  \"include_answer\": true\n}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        336,
+        416
+      ],
+      "id": "dbf40ed0-5e6e-4790-bb08-574fe7bc4bd4",
+      "name": "HTTP Request1",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Iw0hpQS3InZKMUNe",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({\n  sources: ($json.results ?? []).slice(0, 3).map(r => ({\n    title: r.title,\n    url: r.url,\n    content: (r.content ?? \"\").slice(0, 500)\n  }))\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        544,
+        320
+      ],
+      "id": "e1222115-a607-48ce-bbd5-084be7a3650b",
+      "name": "Respond to Webhook1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c521995b-ba99-4524-837d-253dedfe0fab",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f398beb63efb2e10b945c17426740df6ebd7c29c1ea188174f383288755049d2"
+  },
+  "id": "Bx6Q9sCBh1ysnSib",
+  "tags": []
+}
